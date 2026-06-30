@@ -29,23 +29,16 @@ This project investigates who is churning, why, how much revenue is at risk, and
 ---
 
 ## 📁 Repository Structure
+
+```
 saas-churn-analysis/
 │
 ├── 01_EDA_and_Cleaning.ipynb
-│   # Data cleaning + 6 EDA charts (Python)
-│
 ├── 02_SQL_Analysis.sql
-│   # 5 tables, 3 views, 5 business queries (PostgreSQL)
-│
 ├── images/
-│   ├── churn_overall.png
-│   ├── churn_by_plan.png
-│   ├── churn_by_industry.png
-│   ├── churn_reasons.png
-│   ├── mrr_at_risk.png
-│   └── tickets_vs_churn.png
-│
 └── README.md
+
+```
 
 ---
 
