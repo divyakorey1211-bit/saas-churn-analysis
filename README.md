@@ -1,4 +1,4 @@
-# SaaS Customer Churn Analysis
+# Customer Churn And Revenue Risk Analysis
 
 ## 🧠 Problem Context
 
@@ -32,10 +32,15 @@ This project investigates who is churning, why, how much revenue is at risk, and
 
 ```
 saas-churn-analysis/
-│
 ├── 01_EDA_and_Cleaning.ipynb
 ├── 02_SQL_Analysis.sql
+├── churn_analysis.pbix
+├── dashboard/
+│   ├── Churn_Overview.jpeg
+│   └── Revenue___Risk.jpeg
 ├── images/
+│   ├── churn_overall.png
+│   └── ... (6 EDA charts)
 └── README.md
 
 ```
@@ -57,6 +62,18 @@ Raw CSV files across 5 tables (accounts, subscriptions, churn_events, feature_us
 | churn_events | 600 | Churn date, reason code, refund amount |
 | feature_usage | 25,000 | Feature-level product usage per subscription |
 | support_tickets | 2,000 | Ticket count, satisfaction scores, escalations |
+
+---
+
+## 📊 Power BI Dashboard
+
+Built an interactive 2-page dashboard with slicers for Industry, Plan Tier and Risk Category — enabling dynamic filtering across all visuals.
+
+**Page 1 — Churn Overview**
+![Churn Overview](dashboard/Churn_Overview.jpeg)
+
+**Page 2 — Revenue & Risk**
+![Revenue and Risk](dashboard/Revenue_Risk.jpeg)
 
 ---
 
@@ -137,4 +154,4 @@ Churned and active accounts raise virtually the same number of tickets (3.9 vs 4
 - **ML Churn Prediction Model** — Random Forest classifier (AUC: 0.927) trained on features engineered from all 5 tables *(in progress)*
 ---
 
-*Dataset: RavenStack synthetic SaaS dataset*
+
