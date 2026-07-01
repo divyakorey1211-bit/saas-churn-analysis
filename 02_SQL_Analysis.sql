@@ -1,19 +1,3 @@
-/* ============================================================
-   RAVENSTACK SAAS CHURN ANALYSIS — SQL ANALYSIS
-   Author: Divya Korey
-   Database: PostgreSQL
-   ============================================================
-   This script:
-     1. Creates 5 normalized tables (accounts, subscriptions,
-        churn_events, feature_usage, support_tickets)
-     2. Creates 3 cleaned views handling nulls and derived fields
-     3. Runs 5 business analysis queries covering:
-        - Overall churn rate & revenue at risk
-        - Churn by plan tier & industry
-        - Revenue at risk by industry (joins)
-        - Cohort retention analysis (CTEs, DATE_TRUNC)
-        - High-risk account scoring (window functions, RANK)
-   ============================================================ */
 
 
 /* ============================================================
@@ -85,17 +69,9 @@ CREATE TABLE support_tickets (
     escalation_flag                        BOOLEAN
 );
 
--- Data is loaded via pgAdmin's Import/Export tool from the RavenStack CSV files.
--- Load order matters due to foreign keys: accounts -> subscriptions ->
--- churn_events -> feature_usage -> support_tickets
-
 
 /* ============================================================
    SECTION 2 — DATA QUALITY CHECK
-   ============================================================
-   subscriptions.end_date is NULL for active subscriptions (expected)
-   support_tickets.satisfaction_score is NULL when no survey response
-   (expected) — verified both are meaningful nulls, not data errors.
    ============================================================ */
 
 SELECT
@@ -182,8 +158,6 @@ LEFT JOIN v_subscriptions_clean s ON a.account_id = s.account_id;
 /* ============================================================
    QUERY 1 — OVERALL CHURN RATE & REVENUE AT RISK
    ============================================================
-   Concepts: aggregation, FILTER clause, ROUND
-   ============================================================ */
 
 -- 1A: Account-level churn rate
 SELECT
@@ -214,18 +188,10 @@ SELECT
     ROUND(SUM(arr_amount), 2)                                   AS total_arr
 FROM v_subscriptions_clean;
 
-/* RESULTS
-   Total accounts: 500 | Churned: 110 | Churn rate: 22.0%
-   MRR churn rate: 10.4% | Actual ARR lost: $14.1M of $136M total
-*/
-
 
 /* ============================================================
    QUERY 2 — CHURN BY PLAN TIER & INDUSTRY
    ============================================================
-   Concepts: GROUP BY, ORDER BY, table aliasing to resolve
-   ambiguous column names across joined tables
-   ============================================================ */
 
 -- 2A: Churn rate by plan tier
 SELECT
@@ -263,20 +229,9 @@ JOIN v_subscriptions_clean s ON a.account_id = s.account_id
 GROUP BY a.industry
 ORDER BY churn_rate_pct DESC;
 
-/* RESULTS
-   Plan tier: churn is near-identical across Basic/Pro/Enterprise (~22%)
-   -> pricing is not the driver of churn.
-   Industry: DevTools highest at 29.62% churn / $619K churned MRR;
-   EdTech most stable at 17.96%.
-*/
-
-
 /* ============================================================
    QUERY 3 — REVENUE AT RISK BY INDUSTRY
    ============================================================
-   Concepts: JOIN, LEFT JOIN, NULLIF (divide-by-zero protection),
-   multi-step CTEs
-   ============================================================ */
 
 WITH revenue_summary AS (
     SELECT
@@ -317,20 +272,10 @@ SELECT
 FROM final
 ORDER BY arr_at_risk DESC;
 
-/* RESULTS
-   $41.5M total ARR at risk across 5 industries.
-   DevTools highest priority: $12.8M ARR at risk, 29.82% MRR churn rate.
-   Cybersecurity: lower churn count but high avg MRR/account ($2,152)
-   -> fewer customers leave, but each one is costly.
-*/
-
 
 /* ============================================================
    QUERY 4 — MONTHLY COHORT RETENTION ANALYSIS
    ============================================================
-   Concepts: DATE_TRUNC, TO_CHAR, multi-step CTEs
-   ============================================================ */
-
 WITH cohort_base AS (
     SELECT
         a.account_id,
@@ -380,21 +325,10 @@ SELECT
 FROM cohort_rates
 ORDER BY cohort_month;
 
-/* RESULTS
-   Best cohort: Aug 2023 (18.75% churn, 81.25% retention)
-   Worst cohort: Feb 2023 (38.89% churn, $149.7K MRR lost)
-   ~2x variance in retention across signup months — worth investigating
-   what drove the Feb 2023 cohort's poor performance vs. Aug 2023.
-*/
-
 
 /* ============================================================
    QUERY 5 — HIGH-RISK ACTIVE ACCOUNT SCORING
    ============================================================
-   Concepts: multiple JOINs/LEFT JOINs, CASE WHEN inside
-   aggregation, custom weighted scoring, window functions
-   (RANK() OVER PARTITION BY)
-   ============================================================ */
 
 WITH account_metrics AS (
     SELECT
@@ -484,12 +418,3 @@ SELECT
 FROM risk_category
 ORDER BY overall_rank
 LIMIT 20;
-
-/* RESULTS
-   Top 20 "Critical Risk" active accounts identified, representing
-   $6.9M combined monthly MRR exposure (~$82.9M annualized).
-   17 of the 20 flagged accounts had a prior plan downgrade —
-   the single strongest early-warning signal for churn.
-   FinTech accounts make up half of the critical-risk list,
-   consistent with FinTech's elevated churn rate from Query 2.
-*/
